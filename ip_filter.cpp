@@ -6,7 +6,10 @@
 #include <algorithm>
 
 #define UNUSED(v) (void)(v)
+
 using namespace std;
+using ip_type = vector<string>;
+using ip_pool_type = vector<ip_type>;
 
 // ("",  '.') -> [""]
 // ("11", '.') -> ["11"]
@@ -14,7 +17,21 @@ using namespace std;
 // ("11.", '.') -> ["11", ""]
 // (".11", '.') -> ["", "11"]
 // ("11.22", '.') -> ["11", "22"]
-vector<string> split(const string &str, char d)
+
+auto is_valid_ip(const ip_type &ip)
+{
+    if(ip.size() != 4) {
+        return false;
+    }
+    for(auto &s : ip) {
+        if(static_cast<unsigned>(stoi(s)) > 255) {
+            return false;
+        }
+    }
+    return true;
+}
+
+ip_type split(const string &str, char d)
 {
     vector<string> r;
 
@@ -33,7 +50,27 @@ vector<string> split(const string &str, char d)
     return r;
 }
 
-bool operator < (const vector<string> &a, const vector<string> &b)
+// print IPs
+void print_ip_pool(const ip_pool_type &ip_pool)
+{
+    for(const auto &ip : ip_pool) {
+        for(const auto &ip_part : ip) {
+            if(&ip_part != &ip[0]) { // one probably blame me paying with pointers... it's just to avoid multiplying entities
+                cout << ".";
+            }
+            cout << ip_part;
+        }
+        cout << endl;
+    }
+}
+
+void print_ip_pool(const ip_pool_type &&ip_pool) {
+    ip_pool_type _ip_pool{ move(ip_pool) };
+    print_ip_pool(_ip_pool);
+}
+
+// compare IPs
+bool operator < (const ip_type &a, const ip_type &b)
 {
     auto it_b = b.begin();
     for(const auto &s_a : a) {
@@ -52,6 +89,53 @@ bool operator < (const vector<string> &a, const vector<string> &b)
     return false; // common parts of a == b
 }
 
+bool ip_contains(const ip_type &ip, unsigned char n)
+{
+    for(auto &s : ip) {
+        if(static_cast<unsigned char>(stoi(s)) == n) {
+            return true;
+        }
+    }
+    return false;
+}
+
+ip_pool_type filter_ip_any(const ip_pool_type &ip_pool, unsigned char n)
+{
+    ip_pool_type filtered;
+
+    for(const auto &ip : ip_pool) {
+        if(ip_contains(ip, n)) {
+            filtered.push_back(ip);
+        }
+    }
+    return filtered;
+}
+
+ip_pool_type filter_ip(const ip_pool_type &ip_pool, unsigned char n1)
+{
+    ip_pool_type filtered;
+
+    for(const auto &ip : ip_pool) {
+        if(static_cast<unsigned char>(stoi(ip[0])) == n1) {
+            filtered.push_back(ip);
+        }
+    }
+    return filtered;
+}
+
+ip_pool_type filter_ip(const ip_pool_type &ip_pool, unsigned char n1, unsigned char n2)
+{
+    ip_pool_type filtered;
+
+    for(const auto &ip : ip_pool) {
+        if(static_cast<unsigned char>(stoi(ip[0])) == n1 &&
+            static_cast<unsigned char>(stoi(ip[1])) == n2) {
+            filtered.push_back(ip);
+        }
+    }
+    return filtered;
+}
+
 int main(int argc, char const *argv[])
 {
 UNUSED(argc);
@@ -59,30 +143,19 @@ UNUSED(argv);
 
     try
     {
-        vector<vector<string>> ip_pool;
+        ip_pool_type ip_pool;
 
         for(string line; getline(cin, line);)
         {
-            vector<string> v = split(line, '\t');
-            ip_pool.push_back(split(v.at(0), '.'));
+            ip_type v = split(split(line, '\t').at(0), '.');
+            if(is_valid_ip(v)) {
+                ip_pool.push_back(v);
+            }
         }
 
         // TODO reverse lexicographically sort
         sort(ip_pool.begin(), ip_pool.end(), [](const auto &a, const auto &b) {return b < a;} );
-
-        for(vector<vector<string> >::const_iterator ip = ip_pool.cbegin(); ip != ip_pool.cend(); ++ip)
-        {
-            for(vector<string>::const_iterator ip_part = ip->cbegin(); ip_part != ip->cend(); ++ip_part)
-            {
-                if (ip_part != ip->cbegin())
-                {
-                    cout << ".";
-
-                }
-                cout << *ip_part;
-            }
-            cout << endl;
-        }
+        print_ip_pool(ip_pool);
 
         // 222.173.235.246
         // 222.130.177.64
@@ -94,6 +167,8 @@ UNUSED(argv);
 
         // TODO filter by first byte and output
         // ip = filter(1)
+        cout << '\n' << "filter(1)" << endl;
+        print_ip_pool(filter_ip(ip_pool, 1));
 
         // 1.231.69.33
         // 1.87.203.225
@@ -103,6 +178,8 @@ UNUSED(argv);
 
         // TODO filter by first and second bytes and output
         // ip = filter(46, 70)
+        cout << '\n' << "filter(46, 70)" << endl;
+        print_ip_pool(filter_ip(ip_pool, 46, 70));
 
         // 46.70.225.39
         // 46.70.147.26
@@ -111,6 +188,8 @@ UNUSED(argv);
 
         // TODO filter by any byte and output
         // ip = filter_any(46)
+        cout << '\n' << "filter_any(46)" << endl;
+        print_ip_pool(filter_ip_any(ip_pool, 46));
 
         // 186.204.34.46
         // 186.46.222.194
