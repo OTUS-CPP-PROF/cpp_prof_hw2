@@ -18,19 +18,6 @@ using ip_pool_type = vector<ip_type>;
 // (".11", '.') -> ["", "11"]
 // ("11.22", '.') -> ["11", "22"]
 
-auto is_valid_ip(const ip_type &ip)
-{
-    if(ip.size() != 4) {
-        return false;
-    }
-    for(auto &s : ip) {
-        if(static_cast<unsigned>(stoi(s)) > 255) {
-            return false;
-        }
-    }
-    return true;
-}
-
 ip_type split(const string &str, char d)
 {
     vector<string> r;
@@ -50,6 +37,19 @@ ip_type split(const string &str, char d)
     return r;
 }
 
+auto is_valid_ip(const ip_type &ip)
+{
+    if(ip.size() != 4) {
+        return false;
+    }
+    for(auto &s : ip) {
+        if(static_cast<unsigned>(stoi(s)) > 255) {
+            return false;
+        }
+    }
+    return true;
+}
+
 // print IPs
 void print_ip_pool(const ip_pool_type &ip_pool)
 {
@@ -62,11 +62,6 @@ void print_ip_pool(const ip_pool_type &ip_pool)
         }
         cout << endl;
     }
-}
-
-void print_ip_pool(const ip_pool_type &&ip_pool) {
-    ip_pool_type _ip_pool{ move(ip_pool) };
-    print_ip_pool(_ip_pool);
 }
 
 // compare IPs
